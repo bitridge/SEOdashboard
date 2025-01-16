@@ -21,7 +21,10 @@
         "vite": "^6.0"
     },
     "dependencies": {
+        "@ckeditor/ckeditor5-build-classic": "^44.1.0",
+        "@ckeditor/ckeditor5-react": "^9.4.0",
         "@tinymce/tinymce-react": "^5.1.1",
-        "date-fns": "^4.1.0"
+        "date-fns": "^4.1.0",
+        "quill": "^2.0.3"
     }
 }

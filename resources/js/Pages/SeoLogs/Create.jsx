@@ -5,7 +5,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
-import { Editor } from '@tinymce/tinymce-react';
+import QuillEditor from '@/Components/QuillEditor';
 
 export default function Create({ auth, projects, workTypes }) {
     const [editorContent, setEditorContent] = useState('');
@@ -30,21 +30,21 @@ export default function Create({ auth, projects, workTypes }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Add SEO Log</h2>}
+            header={<h2 className="font-semibold text-xl text-white">Add SEO Log</h2>}
         >
             <Head title="Add SEO Log" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <form onSubmit={handleSubmit} className="p-6">
                             <div className="mb-6">
-                                <InputLabel htmlFor="project_id" value="Project" />
+                                <InputLabel htmlFor="project_id" value="Project" className="text-white" />
                                 <select
                                     id="project_id"
                                     name="project_id"
                                     value={data.project_id}
-                                    className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                    className="mt-1 block w-full bg-gray-800 text-white border-gray-700 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
                                     onChange={(e) => setData('project_id', e.target.value)}
                                     required
                                 >
@@ -59,13 +59,13 @@ export default function Create({ auth, projects, workTypes }) {
                             </div>
 
                             <div className="mb-6">
-                                <InputLabel htmlFor="work_date" value="Date" />
+                                <InputLabel htmlFor="work_date" value="Date" className="text-white" />
                                 <TextInput
                                     id="work_date"
                                     type="date"
                                     name="work_date"
                                     value={data.work_date}
-                                    className="mt-1 block w-full"
+                                    className="mt-1 block w-full bg-gray-800 text-white border-gray-700 focus:border-blue-500 focus:ring-blue-500"
                                     onChange={(e) => setData('work_date', e.target.value)}
                                     required
                                 />
@@ -73,12 +73,12 @@ export default function Create({ auth, projects, workTypes }) {
                             </div>
 
                             <div className="mb-6">
-                                <InputLabel htmlFor="work_type" value="Work type" />
+                                <InputLabel htmlFor="work_type" value="Work type" className="text-white" />
                                 <select
                                     id="work_type"
                                     name="work_type"
                                     value={data.work_type}
-                                    className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                    className="mt-1 block w-full bg-gray-800 text-white border-gray-700 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
                                     onChange={(e) => setData('work_type', e.target.value)}
                                     required
                                 >
@@ -93,53 +93,36 @@ export default function Create({ auth, projects, workTypes }) {
                             </div>
 
                             <div className="mb-6">
-                                <InputLabel htmlFor="description" value="Description" />
-                                <Editor
-                                    apiKey="your-tinymce-api-key"
-                                    init={{
-                                        height: 300,
-                                        menubar: false,
-                                        plugins: [
-                                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                                            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                                        ],
-                                        toolbar: 'undo redo | blocks | ' +
-                                            'bold italic forecolor | alignleft aligncenter ' +
-                                            'alignright alignjustify | bullist numlist outdent indent | ' +
-                                            'removeformat | help',
-                                    }}
-                                    onEditorChange={(content) => setEditorContent(content)}
+                                <InputLabel htmlFor="description" value="Description" className="text-white" />
+                                <QuillEditor
+                                    value={editorContent}
+                                    onChange={setEditorContent}
+                                    placeholder="Enter your SEO log description..."
                                 />
                                 <InputError message={errors.description} className="mt-2" />
                             </div>
 
                             <div className="mb-6">
-                                <InputLabel htmlFor="attachment" value="Attachments" />
+                                <InputLabel htmlFor="attachment" value="Attachment" className="text-white" />
                                 <input
                                     type="file"
                                     id="attachment"
                                     name="attachment"
                                     onChange={handleFileChange}
-                                    className="mt-1 block w-full"
+                                    className="mt-1 block w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
                                 />
                                 {progress && (
-                                    <progress value={progress.percentage} max="100">
+                                    <progress value={progress.percentage} max="100" className="mt-2">
                                         {progress.percentage}%
                                     </progress>
                                 )}
                                 <InputError message={errors.attachment} className="mt-2" />
                             </div>
 
-                            <div className="flex items-center justify-end gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => window.history.back()}
-                                    className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Cancel
-                                </button>
-                                <PrimaryButton disabled={processing}>Save SEO Log</PrimaryButton>
+                            <div className="flex items-center justify-end mt-6">
+                                <PrimaryButton className="ml-4" disabled={processing}>
+                                    Save SEO Log
+                                </PrimaryButton>
                             </div>
                         </form>
                     </div>

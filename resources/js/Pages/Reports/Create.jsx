@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import TextInput from '@/Components/TextInput';
-import TextArea from '@/Components/TextArea';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
+import QuillEditor from '@/Components/QuillEditor';
 
 export default function Create({ auth, project, seoLogs }) {
     const [sections, setSections] = useState([
         { id: 1, title: '', content: '', priority: 1 }
     ]);
     const [selectedLogs, setSelectedLogs] = useState([]);
+    const [editorContent, setEditorContent] = useState('');
+    const [sectionContents, setSectionContents] = useState({});
 
     const { data, setData, post, processing, errors } = useForm({
         project_id: project.id,
@@ -25,7 +27,11 @@ export default function Create({ auth, project, seoLogs }) {
         e.preventDefault();
         const formData = {
             ...data,
-            sections: sections,
+            description: editorContent,
+            sections: sections.map(section => ({
+                ...section,
+                content: sectionContents[section.id] || ''
+            })),
             seo_logs: selectedLogs,
             generate_pdf: isPdf
         };
@@ -44,12 +50,22 @@ export default function Create({ auth, project, seoLogs }) {
 
     const removeSection = (sectionId) => {
         setSections(sections.filter(section => section.id !== sectionId));
+        const newSectionContents = { ...sectionContents };
+        delete newSectionContents[sectionId];
+        setSectionContents(newSectionContents);
     };
 
     const updateSection = (id, field, value) => {
-        setSections(sections.map(section => 
-            section.id === id ? { ...section, [field]: value } : section
-        ));
+        if (field === 'content') {
+            setSectionContents({
+                ...sectionContents,
+                [id]: value
+            });
+        } else {
+            setSections(sections.map(section => 
+                section.id === id ? { ...section, [field]: value } : section
+            ));
+        }
     };
 
     const toggleLogSelection = (logId) => {
@@ -65,37 +81,35 @@ export default function Create({ auth, project, seoLogs }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Generate Report - {project.name}</h2>}
+            header={<h2 className="font-semibold text-xl text-white">Generate Report - {project.name}</h2>}
         >
             <Head title="Generate Report" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <form onSubmit={(e) => handleSubmit(e, false)}>
                             {/* Report Information */}
                             <div className="mb-8">
-                                <h3 className="text-lg font-semibold mb-4">Report Information</h3>
+                                <h3 className="text-lg font-semibold text-white mb-4">Report Information</h3>
                                 <div className="grid grid-cols-1 gap-4">
                                     <div>
-                                        <InputLabel htmlFor="title" value="Report Title" />
+                                        <InputLabel htmlFor="title" value="Report Title" className="text-white" />
                                         <TextInput
                                             id="title"
                                             type="text"
-                                            className="mt-1 block w-full"
+                                            className="mt-1 block w-full bg-gray-800 text-white border-gray-700 focus:border-blue-500 focus:ring-blue-500"
                                             value={data.title}
                                             onChange={e => setData('title', e.target.value)}
                                             placeholder="Enter report title"
                                         />
                                     </div>
                                     <div>
-                                        <InputLabel htmlFor="description" value="Description" />
-                                        <TextArea
-                                            id="description"
-                                            className="mt-1 block w-full"
-                                            value={data.description}
-                                            onChange={e => setData('description', e.target.value)}
-                                            placeholder="Enter report description"
+                                        <InputLabel htmlFor="description" value="Description" className="text-white" />
+                                        <QuillEditor
+                                            value={editorContent}
+                                            onChange={setEditorContent}
+                                            placeholder="Enter report description..."
                                         />
                                     </div>
                                 </div>
@@ -104,36 +118,32 @@ export default function Create({ auth, project, seoLogs }) {
                             {/* Select SEO Logs */}
                             <div className="mb-8">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold">Select SEO Logs</h3>
+                                    <h3 className="text-lg font-semibold text-white">Select SEO Logs</h3>
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-4">
+                                <div className="bg-gray-800 rounded-lg p-4">
                                     <table className="min-w-full">
                                         <thead>
                                             <tr>
                                                 <th className="w-8"></th>
-                                                <th className="px-4 py-2 text-left">DATE</th>
-                                                <th className="px-4 py-2 text-left">WORK TYPE</th>
-                                                <th className="px-4 py-2 text-left">DESCRIPTION</th>
+                                                <th className="px-4 py-2 text-left text-white">DATE</th>
+                                                <th className="px-4 py-2 text-left text-white">WORK TYPE</th>
+                                                <th className="px-4 py-2 text-left text-white">DESCRIPTION</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {seoLogs.map((log) => (
-                                                <tr key={log.id} className="hover:bg-gray-100">
+                                                <tr key={log.id} className="border-t border-gray-700">
                                                     <td className="px-4 py-2">
                                                         <input
                                                             type="checkbox"
                                                             checked={selectedLogs.includes(log.id)}
                                                             onChange={() => toggleLogSelection(log.id)}
-                                                            className="rounded border-gray-300"
+                                                            className="rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800"
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-2">{log.work_date}</td>
-                                                    <td className="px-4 py-2">
-                                                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                                            {log.work_type}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-2">{log.description}</td>
+                                                    <td className="px-4 py-2 text-white">{log.work_date}</td>
+                                                    <td className="px-4 py-2 text-white">{log.work_type}</td>
+                                                    <td className="px-4 py-2 text-white">{log.description}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -144,75 +154,69 @@ export default function Create({ auth, project, seoLogs }) {
                             {/* Report Sections */}
                             <div className="mb-8">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold">Report Sections</h3>
+                                    <h3 className="text-lg font-semibold text-white">Report Sections</h3>
                                     <button
                                         type="button"
                                         onClick={addSection}
-                                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center"
+                                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
                                     >
-                                        <span className="mr-2">+</span> Add Section
+                                        Add Section
                                     </button>
                                 </div>
-                                {sections.map((section, index) => (
-                                    <div key={section.id} className="mb-6 bg-gray-50 p-4 rounded-lg">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h4 className="font-medium">Section {index + 1}</h4>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm text-gray-600">Priority: {section.priority}</span>
+                                <div className="space-y-6">
+                                    {sections.map((section, index) => (
+                                        <div key={section.id} className="bg-gray-800 p-4 rounded-lg">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-white font-medium">Section {index + 1}</h4>
                                                 <button
                                                     type="button"
                                                     onClick={() => removeSection(section.id)}
-                                                    className="text-red-600 hover:text-red-800"
+                                                    className="text-red-500 hover:text-red-600"
                                                 >
                                                     Remove
                                                 </button>
                                             </div>
-                                        </div>
-                                        <div className="grid gap-4">
-                                            <div>
-                                                <InputLabel value="Section Title" />
-                                                <TextInput
-                                                    type="text"
-                                                    className="mt-1 block w-full"
-                                                    value={section.title}
-                                                    onChange={e => updateSection(section.id, 'title', e.target.value)}
-                                                />
+                                            <div className="grid gap-4">
+                                                <div>
+                                                    <InputLabel value="Section Title" className="text-white" />
+                                                    <TextInput
+                                                        type="text"
+                                                        className="mt-1 block w-full bg-gray-700 text-white border-gray-600 focus:border-blue-500 focus:ring-blue-500"
+                                                        value={section.title}
+                                                        onChange={e => updateSection(section.id, 'title', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <InputLabel value="Content" className="text-white" />
+                                                    <QuillEditor
+                                                        value={sectionContents[section.id] || ''}
+                                                        onChange={(content) => updateSection(section.id, 'content', content)}
+                                                        placeholder="Enter section content..."
+                                                    />
+                                                </div>
                                             </div>
-                                            <div>
-                                                <InputLabel value="Content" />
-                                                <TextArea
-                                                    className="mt-1 block w-full"
-                                                    value={section.content}
-                                                    onChange={e => updateSection(section.id, 'content', e.target.value)}
-                                                    rows={4}
-                                                />
-                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
 
-                            {/* Action Buttons */}
+                            {/* Actions */}
                             <div className="flex justify-end gap-4">
                                 <Link
-                                    href={route('projects.index')}
-                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                                    href={route('reports.index')}
+                                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded transition"
                                 >
                                     Cancel
                                 </Link>
-                                <SecondaryButton
-                                    type="button"
-                                    onClick={(e) => handleSubmit(e, false)}
-                                    className="bg-blue-500 hover:bg-blue-600"
-                                >
-                                    Preview Report
-                                </SecondaryButton>
-                                <PrimaryButton
-                                    type="button"
+                                <button
+                                    type="submit"
                                     onClick={(e) => handleSubmit(e, true)}
-                                    className="bg-green-500 hover:bg-green-600"
+                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition"
                                 >
-                                    Generate PDF Report
+                                    Generate PDF
+                                </button>
+                                <PrimaryButton disabled={processing}>
+                                    Save Report
                                 </PrimaryButton>
                             </div>
                         </form>
