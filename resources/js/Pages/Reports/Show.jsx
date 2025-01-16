@@ -2,9 +2,41 @@ import { Head, Link } from '@inertiajs/react';
 import { router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatDate } from '@/utils/dateFormat';
+import { useState } from 'react';
+import PdfModal from '@/Components/PdfModal';
 
 export default function Show({ auth, report }) {
-    const { route } = usePage();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pdfContent, setPdfContent] = useState(null);
+
+    const handleGeneratePdf = async () => {
+        try {
+            const response = await axios.get(route('reports.download', report.id));
+            setPdfContent(response.data.content);
+            setIsModalOpen(true);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+        }
+    };
+
+    console.log('Report data:', report); // Debug log
+
+    if (!report) {
+        return (
+            <AuthenticatedLayout
+                user={auth.user}
+                header={<h2 className="font-semibold text-xl text-white">View Report</h2>}
+            >
+                <div className="py-12">
+                    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                        <div className="bg-gray-900 p-6 text-white">
+                            Report not found
+                        </div>
+                    </div>
+                </div>
+            </AuthenticatedLayout>
+        );
+    }
 
     return (
         <AuthenticatedLayout
@@ -22,13 +54,13 @@ export default function Show({ auth, report }) {
                                 <div>
                                     <h1 className="text-2xl font-bold text-white mb-2">{report.title}</h1>
                                     <p className="text-gray-400">
-                                        Project: <span className="text-white">{report.project.name}</span>
+                                        Project: <span className="text-white">{report.project?.name}</span>
                                     </p>
                                     <p className="text-gray-400">
-                                        Created: <span className="text-white">{formatDate(report.created_at, auth.settings)}</span>
+                                        Created: <span className="text-white">{report.created_at ? formatDate(report.created_at, auth.settings) : 'N/A'}</span>
                                     </p>
                                     <p className="text-gray-400">
-                                        Type: <span className="text-white capitalize">{report.type}</span>
+                                        Type: <span className="text-white capitalize">{report.type || 'N/A'}</span>
                                     </p>
                                 </div>
                                 <div className="flex space-x-4">
@@ -38,22 +70,23 @@ export default function Show({ auth, report }) {
                                     >
                                         Edit Report
                                     </Link>
-                                    <a
+                                    <Link
                                         href={route('reports.download', report.id)}
-                                        target="_blank"
                                         className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700"
                                     >
                                         Download PDF
-                                    </a>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
 
                         {/* Overview Section */}
-                        <div className="p-6 border-b border-gray-800">
-                            <h2 className="text-xl font-semibold text-white mb-4">Overview</h2>
-                            <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: report.description }} />
-                        </div>
+                        {report.description && (
+                            <div className="p-6 border-b border-gray-800">
+                                <h2 className="text-xl font-semibold text-white mb-4">Overview</h2>
+                                <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: report.description }} />
+                            </div>
+                        )}
 
                         {/* SEO Activities Section */}
                         {report.seo_logs && report.seo_logs.length > 0 && (
@@ -65,7 +98,7 @@ export default function Show({ auth, report }) {
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-600 text-white rounded-full">
-                                                        {log.work_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                                        {log.work_type?.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                                                     </span>
                                                     <span className="ml-2 text-gray-400">
                                                         {formatDate(log.work_date, auth.settings)}
@@ -94,7 +127,7 @@ export default function Show({ auth, report }) {
                                 <h2 className="text-xl font-semibold text-white mb-4">Report Sections</h2>
                                 <div className="space-y-6">
                                     {report.sections.map((section, index) => (
-                                        <div key={index} className="bg-gray-800 p-4 rounded-lg">
+                                        <div key={section.id || index} className="bg-gray-800 p-4 rounded-lg">
                                             <h3 className="text-lg font-medium text-white mb-3">{section.title}</h3>
                                             <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
                                             {section.image_path && (
@@ -114,6 +147,9 @@ export default function Show({ auth, report }) {
                     </div>
                 </div>
             </div>
+
+            {/* PDF Modal */}
+            <PdfModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} pdfContent={pdfContent} />
         </AuthenticatedLayout>
     );
 } 

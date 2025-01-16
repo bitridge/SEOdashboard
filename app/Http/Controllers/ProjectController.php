@@ -71,7 +71,11 @@ class ProjectController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $project = Project::with(['customer', 'providers'])->findOrFail($id);
+        
+        return Inertia::render('Projects/Show', [
+            'project' => $project
+        ]);
     }
 
     /**

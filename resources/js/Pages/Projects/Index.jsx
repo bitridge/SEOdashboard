@@ -2,6 +2,17 @@ import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatDate } from '@/utils/dateFormat';
 
+const truncateDescription = (description, maxLength = 100) => {
+    // Remove HTML tags
+    const strippedDescription = description.replace(/<[^>]*>/g, '');
+    
+    if (strippedDescription.length <= maxLength) return strippedDescription;
+    
+    // Truncate at word boundary
+    const truncated = strippedDescription.substr(0, maxLength);
+    return truncated.substr(0, truncated.lastIndexOf(' ')) + '...';
+};
+
 export default function Index({ auth, projects }) {
     const handleDelete = (e, projectId) => {
         e.preventDefault();
@@ -48,7 +59,11 @@ export default function Index({ auth, projects }) {
                                             <td className="px-6 py-4">
                                                 <div>
                                                     <div className="text-sm font-medium text-gray-900">{project.name}</div>
-                                                    <div className="text-sm text-gray-500">{project.description}</div>
+                                                    {project.description && (
+                                                        <div className="text-sm text-gray-500 mt-1">
+                                                            {truncateDescription(project.description)}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -82,24 +97,18 @@ export default function Index({ auth, projects }) {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-sm font-medium space-x-2">
-                                                <Link
-                                                    href={route('reports.create', { project: project.id })}
-                                                    className="text-blue-600 hover:text-blue-900"
-                                                >
-                                                    Generate Report
-                                                </Link>
-                                                <Link
-                                                    href={route('projects.edit', project.id)}
-                                                    className="text-blue-600 hover:text-blue-900"
-                                                >
-                                                    Edit
-                                                </Link>
-                                                <button
-                                                    onClick={(e) => handleDelete(e, project.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Delete
-                                                </button>
+                                                <div className="flex items-center">
+                                                    <Link
+                                                        href={route('projects.show', project.id)}
+                                                        className="inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md transition-colors duration-150"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                        View
+                                                    </Link>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

@@ -2,134 +2,162 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ $report->title }}</title>
+    <title>{{ $report['title'] }}</title>
     <style>
+        @page {
+            margin: 50px 50px;
+            header: page-header;
+            footer: page-footer;
+        }
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
+            font-family: 'Helvetica', sans-serif;
             color: #333;
-            margin: 20px;
-            font-size: 12px;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
         }
-        .header {
+        .page-break {
+            page-break-after: always;
+        }
+        .logo-container {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #ddd;
+            margin-bottom: 40px;
         }
-        .title {
-            font-size: 24px;
+        .logo {
+            width: 100px;
+            height: auto;
+        }
+        .report-title {
+            text-align: center;
+            font-size: 36px;
             font-weight: bold;
-            margin-bottom: 15px;
-            color: #1a1a1a;
+            color: #2d3748;
+            margin-bottom: 60px;
         }
         .project-info {
-            margin-bottom: 20px;
-            font-size: 14px;
+            text-align: center;
+            background: #f8fafc;
+            padding: 30px;
+            margin: 40px 0;
+            border-radius: 8px;
+        }
+        .project-info p {
+            margin: 10px 0;
+            font-size: 16px;
+            color: #4a5568;
+        }
+        .project-info strong {
+            font-weight: bold;
+            color: #2d3748;
+            margin-right: 10px;
         }
         .section {
-            margin-bottom: 30px;
-            page-break-inside: avoid;
+            margin: 40px 0;
         }
         .section-title {
-            font-size: 18px;
+            font-size: 24px;
             font-weight: bold;
-            margin-bottom: 15px;
-            color: #2563eb;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #2563eb;
-        }
-        .content {
+            color: #2d3748;
             margin-bottom: 20px;
         }
-        .seo-log {
-            background-color: #f8f9fa;
-            padding: 15px;
-            margin-bottom: 15px;
+        .section-content {
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .section-image {
+            max-width: 100%;
+            margin: 20px 0;
             border-radius: 4px;
-            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .page-number {
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+        }
+        .page-number:after {
+            content: "Page " counter(page) " of " counter(pages);
+        }
+        .seo-log {
+            background: #f8fafc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4a5568;
         }
         .seo-log-header {
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #4a5568;
         }
-        .work-type {
-            color: #2563eb;
-            font-weight: bold;
-            display: inline-block;
-            margin-right: 15px;
-        }
-        .date {
-            color: #6b7280;
-            font-size: 11px;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-            margin: 15px 0;
-            display: block;
-        }
-        h3 {
-            color: #1a1a1a;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        p {
-            margin: 0 0 10px 0;
+        .seo-log-content {
+            font-size: 14px;
+            line-height: 1.6;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="title">{{ $report->title }}</div>
-        <div class="project-info">
-            <p><strong>Project:</strong> {{ $report->project->name }}</p>
-            <p><strong>Generated:</strong> {{ $report->generatedAt }}</p>
-            <p><strong>Type:</strong> {{ ucfirst($report->type) }}</p>
-        </div>
+    <div class="logo-container">
+        <img src="{{ public_path('images/logo.png') }}" alt="Logo" class="logo">
     </div>
 
-    @if($report->description)
+    <div class="report-title">{{ $report['title'] }}</div>
+
+    <div class="project-info">
+        <p><strong>Project:</strong> {{ $report['project']['name'] }}</p>
+        <p><strong>Date:</strong> {{ $report['generatedAt'] }}</p>
+        <p><strong>Created by:</strong> {{ auth()->user()->name }}</p>
+    </div>
+
+    @if($report['description'])
     <div class="section">
-        <div class="section-title">Overview</div>
-        <div class="content">{!! $report->description !!}</div>
+        <div class="section-content">
+            {!! $report['description'] !!}
+        </div>
     </div>
     @endif
 
-    @if(count($report->sections) > 0)
+    @if(count($report['sections']) > 0)
+    @foreach($report['sections'] as $section)
     <div class="section">
-        <div class="section-title">Report Sections</div>
-        @foreach($report->sections as $section)
-        <div class="content">
-            <h3>{{ $section->title }}</h3>
-            {!! $section->content !!}
-            @if(!empty($section->image_path))
-            <img src="{{ storage_path('app/public/' . $section->image_path) }}" alt="{{ $section->title }}">
+        <div class="section-title">{{ $section['title'] }}</div>
+        <div class="section-content">
+            {!! $section['content'] !!}
+            @if($section['image_path'])
+            <img class="section-image" src="{{ storage_path('app/public/' . $section['image_path']) }}" alt="{{ $section['title'] }}">
             @endif
         </div>
-        @endforeach
     </div>
+    @if(!$loop->last)
+    <div class="page-break"></div>
+    @endif
+    @endforeach
     @endif
 
-    @if(count($report->seoLogs) > 0)
+    @if(count($report['seoLogs']) > 0)
     <div class="section">
         <div class="section-title">SEO Activities</div>
-        @foreach($report->seoLogs as $log)
+        @foreach($report['seoLogs'] as $log)
         <div class="seo-log">
             <div class="seo-log-header">
-                <span class="work-type">{{ str_replace('_', ' ', ucwords($log->work_type)) }}</span>
-                <span class="date">{{ \Carbon\Carbon::parse($log->work_date)->format('M d, Y') }}</span>
+                <span><strong>{{ ucwords(str_replace('_', ' ', $log['work_type'])) }}</strong></span>
+                <span>{{ $log['work_date'] }}</span>
             </div>
-            <div class="content">{!! $log->description !!}</div>
-            @if(!empty($log->attachment_path))
-            <div class="attachment">
-                <img src="{{ storage_path('app/public/' . $log->attachment_path) }}" alt="Attachment">
+            <div class="seo-log-content">
+                {!! $log['description'] !!}
+                @if(!empty($log['attachment_path']))
+                <p><strong>Attachment:</strong> {{ basename($log['attachment_path']) }}</p>
+                @endif
             </div>
-            @endif
         </div>
         @endforeach
     </div>
     @endif
+
+    <div class="page-number"></div>
 </body>
 </html> 

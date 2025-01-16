@@ -107,20 +107,16 @@ class SeoLogController extends Controller
     public function edit(SeoLog $seoLog)
     {
         $this->authorize('update', $seoLog);
-
-        $projects = Project::when(auth()->user()->role === 'provider', function ($query) {
-                $query->whereHas('providers', function ($q) {
-                    $q->where('users.id', auth()->id());
-                });
-            })
-            ->get();
-
-        $workTypes = config('seo.work_types');
-
+        
         return Inertia::render('SeoLogs/Edit', [
-            'seoLog' => $seoLog->load('project', 'provider'),
-            'projects' => $projects,
-            'workTypes' => $workTypes,
+            'seoLog' => [
+                'id' => $seoLog->id,
+                'work_type' => $seoLog->work_type,
+                'work_date' => $seoLog->work_date,
+                'description' => $seoLog->description,
+                'attachment_path' => $seoLog->attachment_path,
+                'project_id' => $seoLog->project_id,
+            ]
         ]);
     }
 
@@ -129,26 +125,27 @@ class SeoLogController extends Controller
         $this->authorize('update', $seoLog);
 
         $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
+            'work_type' => 'required|string|in:on_page,off_page,technical,content,analytics',
             'work_date' => 'required|date',
-            'work_type' => 'required|string',
             'description' => 'required|string',
-            'attachment' => 'nullable|file|max:10240'
+            'attachment' => 'nullable|file|max:2048'
         ]);
 
+        // Handle file upload if present
         if ($request->hasFile('attachment')) {
-            // Delete old attachment
+            // Delete old attachment if exists
             if ($seoLog->attachment_path) {
-                Storage::delete('public/' . $seoLog->attachment_path);
+                Storage::disk('public')->delete($seoLog->attachment_path);
             }
-            $path = $request->file('attachment')->store('seo-log-attachments', 'public');
-            $validated['attachment_path'] = $path;
+            
+            $attachmentPath = $request->file('attachment')->store('seo-log-attachments', 'public');
+            $validated['attachment_path'] = $attachmentPath;
         }
 
         $seoLog->update($validated);
 
-        return redirect()->route('seo-logs.index')
-            ->with('success', 'SEO log updated successfully.');
+        return redirect()->route('seo-logs.show', $seoLog)
+            ->with('success', 'SEO Log updated successfully.');
     }
 
     public function destroy(SeoLog $seoLog)

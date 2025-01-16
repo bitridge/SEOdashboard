@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\PdfService;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
@@ -82,22 +84,80 @@ class ReportController extends Controller
             $query->orderBy('work_date', 'desc');
         }]);
 
+        $reportData = [
+            'id' => $report->id,
+            'title' => $report->title,
+            'description' => $report->content,
+            'type' => $report->type ?? 'custom',
+            'created_at' => $report->created_at,
+            'project' => [
+                'id' => $report->project->id,
+                'name' => $report->project->name,
+            ],
+            'sections' => $report->sections->map(function($section) {
+                return [
+                    'id' => $section->id,
+                    'title' => $section->title,
+                    'content' => $section->content,
+                    'image_path' => $section->image_path,
+                ];
+            })->values()->all(),
+            'seo_logs' => $report->seoLogs->map(function($log) {
+                return [
+                    'id' => $log->id,
+                    'work_type' => $log->work_type,
+                    'work_date' => $log->work_date,
+                    'description' => $log->description,
+                    'attachment_path' => $log->attachment_path,
+                ];
+            })->values()->all()
+        ];
+
         return Inertia::render('Reports/Show', [
-            'report' => $report->toArray()
+            'auth' => [
+                'user' => auth()->user(),
+                'settings' => auth()->user()->settings ?? []
+            ],
+            'report' => $reportData
         ]);
     }
 
-    public function download(Report $report)
+    public function download(Report $report, PdfService $pdfService)
     {
-        $report->load(['project', 'sections', 'seoLogs' => function($query) {
-            $query->orderBy('work_date', 'desc');
-        }]);
+        $report->load(['project', 'sections', 'seoLogs']);
+        
+        $reportData = [
+            'report' => [
+                'title' => $report->title,
+                'project' => [
+                    'name' => $report->project->name,
+                ],
+                'description' => $report->content,
+                'type' => $report->type ?? 'custom',
+                'generatedAt' => now()->format('F j, Y'),
+                'sections' => $report->sections->map(function($section) {
+                    return [
+                        'title' => $section->title,
+                        'content' => $section->content,
+                        'image_path' => $section->image_path
+                    ];
+                })->values()->all(),
+                'seoLogs' => $report->seoLogs->map(function($log) {
+                    return [
+                        'work_type' => $log->work_type,
+                        'work_date' => \Carbon\Carbon::parse($log->work_date)->format('M j, Y'),
+                        'description' => $log->description,
+                        'attachment_path' => $log->attachment_path
+                    ];
+                })->values()->all()
+            ]
+        ];
 
-        $pdf = PDF::loadView('reports.pdf', [
-            'report' => $report
-        ]);
+        $pdfData = $pdfService->generatePdf('reports.pdf', $reportData);
 
-        return $pdf->download($report->title . '.pdf');
+        return response($pdfData['content'])
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $report->title . '.pdf"');
     }
 
     public function edit(Report $report)

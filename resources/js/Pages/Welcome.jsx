@@ -41,7 +41,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             </div>
                         </div>
                     </div>
-                </nav>
+                            </nav>
 
                 {/* Hero Section */}
                 <div className="relative overflow-hidden">
@@ -84,40 +84,40 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 <div className="text-blue-500 mb-4">
                                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                </div>
+                                        </svg>
+                                    </div>
                                 <h3 className="text-xl font-bold text-white mb-4">Project Management</h3>
                                 <p className="text-gray-300">
                                     Organize and track multiple SEO projects with ease. Assign providers and monitor progress in real-time.
-                                </p>
-                            </div>
+                                        </p>
+                                    </div>
 
                             {/* SEO Activity Logging */}
                             <div className="bg-gray-700 p-8 rounded-xl">
                                 <div className="text-blue-500 mb-4">
                                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                </div>
+                                        </svg>
+                                    </div>
                                 <h3 className="text-xl font-bold text-white mb-4">Activity Logging</h3>
                                 <p className="text-gray-300">
                                     Keep detailed records of all SEO activities. Track changes, optimizations, and improvements over time.
-                                </p>
-                            </div>
+                                        </p>
+                                    </div>
 
                             {/* Report Generation */}
                             <div className="bg-gray-700 p-8 rounded-xl">
                                 <div className="text-blue-500 mb-4">
                                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                </div>
+                                        </svg>
+                                    </div>
                                 <h3 className="text-xl font-bold text-white mb-4">Report Generation</h3>
                                 <p className="text-gray-300">
                                     Generate professional SEO reports with custom sections and activity summaries. Export to PDF format.
-                                </p>
-                            </div>
-                        </div>
+                                        </p>
+                                    </div>
+                                </div>
                     </div>
                 </div>
 
