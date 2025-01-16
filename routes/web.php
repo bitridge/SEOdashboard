@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SeoLogController;
+use App\Http\Controllers\ReportController;
 use App\Http\Middleware\CheckRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -30,29 +31,6 @@ Route::middleware(['web'])->group(function () {
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 
-    // Admin Routes
-    Route::middleware(['auth', CheckRole::class.':admin'])->group(function () {
-        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
-        Route::resource('customers', CustomerController::class);
-        Route::resource('users', UserController::class);
-        Route::resource('projects', ProjectController::class);
-    });
-
-    // Provider Routes
-    Route::middleware(['auth', CheckRole::class.':provider'])->group(function () {
-        Route::get('/provider/dashboard', [ProviderDashboardController::class, 'index'])->name('provider.dashboard');
-    });
-
-    // Routes accessible by both Admin and Provider
-    Route::middleware(['auth', CheckRole::class.':admin,provider'])->group(function () {
-        Route::resource('seo-logs', SeoLogController::class);
-    });
-
-    // Customer Routes
-    Route::middleware(['auth', CheckRole::class.':customer'])->group(function () {
-        Route::get('/customer/dashboard', [CustomerDashboardController::class, 'index'])->name('customer.dashboard');
-    });
-
     // Default redirect after login based on role
     Route::get('/dashboard', function () {
         if (auth()->check()) {
@@ -69,6 +47,30 @@ Route::middleware(['web'])->group(function () {
         
         return redirect('/');
     })->middleware(['auth'])->name('dashboard');
+
+    // Admin Routes
+    Route::middleware(['auth', CheckRole::class.':admin'])->group(function () {
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::resource('customers', CustomerController::class);
+        Route::resource('users', UserController::class);
+        Route::resource('projects', ProjectController::class);
+    });
+
+    // Provider Routes
+    Route::middleware(['auth', CheckRole::class.':provider'])->group(function () {
+        Route::get('/provider/dashboard', [ProviderDashboardController::class, 'index'])->name('provider.dashboard');
+    });
+
+    // Routes accessible by both Admin and Provider
+    Route::middleware(['auth', CheckRole::class.':admin,provider'])->group(function () {
+        Route::resource('seo-logs', SeoLogController::class);
+        Route::resource('reports', ReportController::class);
+    });
+
+    // Customer Routes
+    Route::middleware(['auth', CheckRole::class.':customer'])->group(function () {
+        Route::get('/customer/dashboard', [CustomerDashboardController::class, 'index'])->name('customer.dashboard');
+    });
 
     require __DIR__.'/auth.php';
 });

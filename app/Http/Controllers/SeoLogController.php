@@ -10,27 +10,49 @@ use Inertia\Inertia;
 
 class SeoLogController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $seoLogs = SeoLog::with(['project', 'provider'])
+        $query = SeoLog::with(['project', 'provider'])
             ->when(auth()->user()->role === 'provider', function ($query) {
-                $query->where('provider_id', auth()->id());
+                $query->whereHas('project', function ($q) {
+                    $q->whereHas('providers', function ($q) {
+                        $q->where('users.id', auth()->id());
+                    });
+                });
             })
-            ->latest()
+            ->when($request->project_id, function ($query, $projectId) {
+                $query->where('project_id', $projectId);
+            })
+            ->when($request->work_type, function ($query, $workType) {
+                $query->where('work_type', $workType);
+            })
+            ->when($request->date_range, function ($query, $dateRange) {
+                // Handle date range filtering
+                if ($dateRange === 'today') {
+                    $query->whereDate('work_date', today());
+                } elseif ($dateRange === 'week') {
+                    $query->whereBetween('work_date', [now()->startOfWeek(), now()->endOfWeek()]);
+                } elseif ($dateRange === 'month') {
+                    $query->whereBetween('work_date', [now()->startOfMonth(), now()->endOfMonth()]);
+                }
+            })
+            ->latest('work_date');
+
+        $seoLogs = $query->get();
+
+        // Get available projects based on user role
+        $projects = Project::when(auth()->user()->role === 'provider', function ($query) {
+                $query->whereHas('providers', function ($q) {
+                    $q->where('users.id', auth()->id());
+                });
+            })
             ->get();
 
-        \Log::info('SEO Logs Data:', [
-            'user_id' => auth()->id(),
-            'user_role' => auth()->user()->role,
-            'logs_count' => $seoLogs->count(),
-            'logs' => $seoLogs->toArray()
-        ]);
-
         return Inertia::render('SeoLogs/Index', [
-            'auth' => [
-                'user' => auth()->user()
-            ],
-            'seoLogs' => $seoLogs
+            'seoLogs' => $seoLogs,
+            'projects' => $projects,
+            'workTypes' => SeoLog::workTypes(),
+            'filters' => $request->only(['project_id', 'work_type', 'date_range']),
         ]);
     }
 
