@@ -5,80 +5,95 @@ export default function Index({ auth, customers }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-xl text-gray-800 leading-tight">Customers</h2>
-                    <Link
-                        href={route('customers.create')}
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                        Add New Customer
-                    </Link>
-                </div>
-            }
+            header={<h2 className="font-semibold text-xl text-white">Customers</h2>}
         >
             <Head title="Customers" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {customers && customers.length > 0 ? (
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Logo</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {customers.map((customer) => (
-                                            <tr key={customer.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {customer.logo && (
-                                                        <img
-                                                            src={`/storage/${customer.logo}`}
-                                                            alt={`${customer.name} logo`}
-                                                            className="h-10 w-10 rounded-full"
-                                                        />
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">{customer.name}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap">{customer.email}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <a href={customer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900">
-                                                        {customer.website}
-                                                    </a>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <Link
-                                                        href={route('customers.edit', customer.id)}
-                                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                                    >
-                                                        Edit
-                                                    </Link>
-                                                    <Link
-                                                        href={route('customers.destroy', customer.id)}
-                                                        method="delete"
-                                                        as="button"
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        Delete
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <div className="text-center py-4">No customers found.</div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+            <div className="mb-6 flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-white">Customer List</h1>
+                <Link
+                    href={route('customers.create')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                    Add Customer
+                </Link>
+            </div>
+
+            <div className="bg-gray-900 rounded-lg overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr className="bg-gray-800">
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">Logo</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">Email</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">Website</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">Created At</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                        {customers.map((customer) => (
+                            <tr key={customer.id} className="hover:bg-gray-800">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {customer.logo ? (
+                                        <img 
+                                            src={`/storage/${customer.logo}`} 
+                                            alt={`${customer.name} logo`}
+                                            className="h-10 w-10 rounded-full object-cover bg-gray-800"
+                                            onError={(e) => {
+                                                e.target.src = 'https://via.placeholder.com/40?text=Logo';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center">
+                                            <span className="text-gray-400 text-sm">N/A</span>
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-white">{customer.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-white">{customer.email}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {customer.website ? (
+                                        <a 
+                                            href={customer.website} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-blue-400 hover:text-blue-300"
+                                        >
+                                            {customer.website}
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-400">N/A</span>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-white">
+                                    {new Date(customer.created_at).toLocaleDateString()}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                                    <Link
+                                        href={route('customers.edit', customer.id)}
+                                        className="text-blue-400 hover:text-blue-300 font-medium"
+                                    >
+                                        Edit
+                                    </Link>
+                                    <Link
+                                        href={route('customers.destroy', customer.id)}
+                                        method="delete"
+                                        as="button"
+                                        className="text-red-400 hover:text-red-300 font-medium"
+                                        onClick={(e) => {
+                                            if (!confirm('Are you sure you want to delete this customer?')) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                    >
+                                        Delete
+                                    </Link>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </AuthenticatedLayout>
     );
