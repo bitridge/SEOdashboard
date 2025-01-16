@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatDate } from '@/utils/dateFormat';
 
 export default function Index({ auth, projects }) {
     const handleDelete = (e, projectId) => {
@@ -69,7 +70,7 @@ export default function Index({ auth, projects }) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-500">
-                                                {project.start_date} - {project.end_date}
+                                                {formatDate(project.start_date, auth.settings)} - {formatDate(project.end_date, auth.settings)}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${

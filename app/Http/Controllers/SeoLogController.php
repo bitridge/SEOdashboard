@@ -7,9 +7,12 @@ use App\Models\SeoLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SeoLogController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
         $query = SeoLog::with(['project', 'provider'])
@@ -112,10 +115,12 @@ class SeoLogController extends Controller
             })
             ->get();
 
+        $workTypes = config('seo.work_types');
+
         return Inertia::render('SeoLogs/Edit', [
-            'seoLog' => $seoLog,
+            'seoLog' => $seoLog->load('project', 'provider'),
             'projects' => $projects,
-            'workTypes' => SeoLog::workTypes()
+            'workTypes' => $workTypes,
         ]);
     }
 

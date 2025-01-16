@@ -77,6 +77,9 @@ export default function Authenticated({ user, header, children }) {
 
                                     <Dropdown.Content>
                                         <Dropdown.Link href={route('profile.edit')} className="text-gray-900 hover:bg-gray-100">Profile</Dropdown.Link>
+                                        {user.role === 'admin' && (
+                                            <Dropdown.Link href={route('settings.index')} className="text-gray-900 hover:bg-gray-100">Settings</Dropdown.Link>
+                                        )}
                                         <Dropdown.Link href={route('logout')} method="post" as="button" className="text-gray-900 hover:bg-gray-100">
                                             Log Out
                                         </Dropdown.Link>

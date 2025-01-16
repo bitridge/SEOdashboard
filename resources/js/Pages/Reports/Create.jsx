@@ -6,14 +6,17 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import QuillEditor from '@/Components/QuillEditor';
+import { formatDate } from '@/utils/dateFormat';
 
 export default function Create({ auth, project, seoLogs }) {
     const [sections, setSections] = useState([
-        { id: 1, title: '', content: '', priority: 1 }
+        { id: 1, title: '', content: '', priority: 1, image: null }
     ]);
     const [selectedLogs, setSelectedLogs] = useState([]);
     const [editorContent, setEditorContent] = useState('');
     const [sectionContents, setSectionContents] = useState({});
+    const [sectionImages, setSectionImages] = useState({});
+    const [imagePreview, setImagePreview] = useState({});
 
     const { data, setData, post, processing, errors } = useForm({
         project_id: project.id,
@@ -21,21 +24,77 @@ export default function Create({ auth, project, seoLogs }) {
         description: '',
         sections: sections,
         seo_logs: [],
+        generate_pdf: false
     });
 
-    const handleSubmit = (e, isPdf = false) => {
+    const handleSubmit = (e, generatePdf = false) => {
         e.preventDefault();
-        const formData = {
-            ...data,
-            description: editorContent,
-            sections: sections.map(section => ({
-                ...section,
-                content: sectionContents[section.id] || ''
-            })),
-            seo_logs: selectedLogs,
-            generate_pdf: isPdf
-        };
-        post(route('reports.store'), formData);
+        
+        // Create FormData object
+        const formData = new FormData();
+        formData.append('project_id', project.id);
+        formData.append('title', data.title);
+        formData.append('description', editorContent);
+        formData.append('seo_logs', JSON.stringify(selectedLogs));
+        formData.append('generate_pdf', generatePdf);
+
+        // Add sections with their images
+        const sectionsData = sections.map(section => ({
+            ...section,
+            content: sectionContents[section.id] || ''
+        }));
+        formData.append('sections', JSON.stringify(sectionsData));
+
+        // Append section images
+        Object.keys(sectionImages).forEach(sectionId => {
+            if (sectionImages[sectionId]) {
+                formData.append(`section_images[${sectionId}]`, sectionImages[sectionId]);
+            }
+        });
+
+        // Submit the form
+        if (generatePdf) {
+            post(route('reports.generate-pdf', project.id), {
+                data: formData,
+                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Handle PDF download if needed
+                },
+                onError: (errors) => {
+                    console.error('Form submission errors:', errors);
+                }
+            });
+        } else {
+            post(route('reports.store'), {
+                data: formData,
+                forceFormData: true,
+                preserveScroll: true,
+                onError: (errors) => {
+                    console.error('Form submission errors:', errors);
+                }
+            });
+        }
+    };
+
+    const handleFileChange = (sectionId, e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSectionImages(prev => ({
+                ...prev,
+                [sectionId]: file
+            }));
+
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(prev => ({
+                    ...prev,
+                    [sectionId]: reader.result
+                }));
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const addSection = () => {
@@ -43,7 +102,8 @@ export default function Create({ auth, project, seoLogs }) {
             id: sections.length + 1,
             title: '',
             content: '',
-            priority: sections.length + 1
+            priority: sections.length + 1,
+            image: null
         };
         setSections([...sections, newSection]);
     };
@@ -53,6 +113,14 @@ export default function Create({ auth, project, seoLogs }) {
         const newSectionContents = { ...sectionContents };
         delete newSectionContents[sectionId];
         setSectionContents(newSectionContents);
+        
+        // Clean up image states
+        const newSectionImages = { ...sectionImages };
+        const newImagePreview = { ...imagePreview };
+        delete newSectionImages[sectionId];
+        delete newImagePreview[sectionId];
+        setSectionImages(newSectionImages);
+        setImagePreview(newImagePreview);
     };
 
     const updateSection = (id, field, value) => {
@@ -88,7 +156,7 @@ export default function Create({ auth, project, seoLogs }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <form onSubmit={(e) => handleSubmit(e, false)}>
+                        <form>
                             {/* Report Information */}
                             <div className="mb-8">
                                 <h3 className="text-lg font-semibold text-white mb-4">Report Information</h3>
@@ -103,6 +171,7 @@ export default function Create({ auth, project, seoLogs }) {
                                             onChange={e => setData('title', e.target.value)}
                                             placeholder="Enter report title"
                                         />
+                                        {errors.title && <div className="text-red-500 text-sm mt-1">{errors.title}</div>}
                                     </div>
                                     <div>
                                         <InputLabel htmlFor="description" value="Description" className="text-white" />
@@ -111,6 +180,7 @@ export default function Create({ auth, project, seoLogs }) {
                                             onChange={setEditorContent}
                                             placeholder="Enter report description..."
                                         />
+                                        {errors.description && <div className="text-red-500 text-sm mt-1">{errors.description}</div>}
                                     </div>
                                 </div>
                             </div>
@@ -141,9 +211,9 @@ export default function Create({ auth, project, seoLogs }) {
                                                             className="rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800"
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-2 text-white">{log.work_date}</td>
+                                                    <td className="px-4 py-2 text-white">{formatDate(log.work_date, auth.settings)}</td>
                                                     <td className="px-4 py-2 text-white">{log.work_type}</td>
-                                                    <td className="px-4 py-2 text-white">{log.description}</td>
+                                                    <td className="px-4 py-2 text-white prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: log.description }} />
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -194,6 +264,24 @@ export default function Create({ auth, project, seoLogs }) {
                                                         placeholder="Enter section content..."
                                                     />
                                                 </div>
+                                                <div>
+                                                    <InputLabel value="Image" className="text-white" />
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => handleFileChange(section.id, e)}
+                                                        className="mt-1 block w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
+                                                    />
+                                                    {imagePreview[section.id] && (
+                                                        <div className="mt-2">
+                                                            <img
+                                                                src={imagePreview[section.id]}
+                                                                alt="Section preview"
+                                                                className="max-w-xs rounded-lg"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -209,13 +297,18 @@ export default function Create({ auth, project, seoLogs }) {
                                     Cancel
                                 </Link>
                                 <button
-                                    type="submit"
+                                    type="button"
                                     onClick={(e) => handleSubmit(e, true)}
                                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition"
+                                    disabled={processing}
                                 >
                                     Generate PDF
                                 </button>
-                                <PrimaryButton disabled={processing}>
+                                <PrimaryButton
+                                    type="button"
+                                    onClick={(e) => handleSubmit(e, false)}
+                                    disabled={processing}
+                                >
                                     Save Report
                                 </PrimaryButton>
                             </div>

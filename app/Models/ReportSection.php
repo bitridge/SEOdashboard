@@ -14,7 +14,8 @@ class ReportSection extends Model
         'report_id',
         'title',
         'content',
-        'priority'
+        'priority',
+        'image_path'
     ];
 
     public function report(): BelongsTo

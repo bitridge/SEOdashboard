@@ -4,16 +4,18 @@ namespace App\Policies;
 
 use App\Models\SeoLog;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class SeoLogPolicy
 {
+    use HandlesAuthorization;
+
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return true; // Everyone can view logs, but controller filters based on role
+        return true;
     }
 
     /**
@@ -21,7 +23,7 @@ class SeoLogPolicy
      */
     public function view(User $user, SeoLog $seoLog): bool
     {
-        return $user->isAdmin() || $user->id === $seoLog->provider_id;
+        return $user->role === 'admin' || $user->id === $seoLog->provider_id;
     }
 
     /**
@@ -29,7 +31,7 @@ class SeoLogPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isProvider(); // Only providers can create logs
+        return true;
     }
 
     /**
@@ -37,7 +39,7 @@ class SeoLogPolicy
      */
     public function update(User $user, SeoLog $seoLog): bool
     {
-        return $user->isAdmin() || $user->id === $seoLog->provider_id;
+        return $user->role === 'admin' || $user->id === $seoLog->provider_id;
     }
 
     /**
@@ -45,22 +47,6 @@ class SeoLogPolicy
      */
     public function delete(User $user, SeoLog $seoLog): bool
     {
-        return $user->isAdmin() || $user->id === $seoLog->provider_id;
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, SeoLog $seoLog): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, SeoLog $seoLog): bool
-    {
-        return false;
+        return $user->role === 'admin' || $user->id === $seoLog->provider_id;
     }
 }

@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { format } from 'date-fns';
+import { formatDate } from '@/utils/dateFormat';
 import { useState } from 'react';
 
 export default function Index({ auth, seoLogs, projects, workTypes, filters }) {
@@ -128,7 +128,7 @@ export default function Index({ auth, seoLogs, projects, workTypes, filters }) {
                                 {seoLogs.map((log) => (
                                     <tr key={log.id}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {format(new Date(log.work_date), 'MMM dd, yyyy')}
+                                            {formatDate(log.work_date, auth.settings)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {log.project.name}
@@ -156,40 +156,40 @@ export default function Index({ auth, seoLogs, projects, workTypes, filters }) {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <div className="flex space-x-2">
+                                            <div className="flex space-x-4">
                                                 <Link
                                                     href={route('seo-logs.show', log.id)}
-                                                    className="text-blue-600 hover:text-blue-900"
+                                                    className="text-blue-600 hover:text-blue-900 flex items-center"
                                                 >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <span className="mr-1">View</span>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                     </svg>
                                                 </Link>
                                                 <Link
                                                     href={route('seo-logs.edit', log.id)}
-                                                    className="text-blue-600 hover:text-blue-900"
+                                                    className="text-blue-600 hover:text-blue-900 flex items-center"
                                                 >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <span className="mr-1">Edit</span>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                     </svg>
                                                 </Link>
-                                                <Link
-                                                    href={route('seo-logs.destroy', log.id)}
-                                                    method="delete"
-                                                    as="button"
-                                                    className="text-red-600 hover:text-red-900"
+                                                <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         if (confirm('Are you sure you want to delete this log?')) {
                                                             router.delete(route('seo-logs.destroy', log.id));
                                                         }
                                                     }}
+                                                    className="text-red-600 hover:text-red-900 flex items-center"
                                                 >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <span className="mr-1">Delete</span>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
-                                                </Link>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

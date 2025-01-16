@@ -68,6 +68,8 @@ Route::middleware(['web'])->group(function () {
     Route::middleware(['auth', CheckRole::class.':admin,provider'])->group(function () {
         Route::resource('seo-logs', SeoLogController::class);
         Route::resource('reports', ReportController::class);
+        Route::get('reports/{report}/download', [ReportController::class, 'download'])->name('reports.download');
+        Route::post('reports/{project}/generate-pdf', [ReportController::class, 'generatePdf'])->name('reports.generate-pdf');
     });
 
     // Customer Routes
