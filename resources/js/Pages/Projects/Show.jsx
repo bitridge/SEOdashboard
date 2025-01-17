@@ -33,7 +33,7 @@ export default function Show({ auth, project }) {
                                 {/* Action Buttons */}
                                 <div className="flex items-center gap-2">
                                     <Link
-                                        href={route('reports.create', { project: project.id })}
+                                        href={route('reports.create', project.id)}
                                         className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors duration-150"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -110,6 +110,73 @@ export default function Show({ auth, project }) {
                                         />
                                     </div>
                                 )}
+
+                                {/* Recent SEO Logs */}
+                                <div className="bg-gray-800 p-4 rounded-lg md:col-span-2">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold text-white">Recent SEO Logs</h3>
+                                        <Link
+                                            href={route('seo-logs.index', { project_id: project.id })}
+                                            className="text-blue-500 hover:text-blue-400 text-sm"
+                                        >
+                                            View All Logs
+                                        </Link>
+                                    </div>
+                                    
+                                    {project.seo_logs && project.seo_logs.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {project.seo_logs.map((log) => (
+                                                <div key={log.id} className="bg-gray-900 p-4 rounded-lg">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div>
+                                                            <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-600 text-white rounded-full">
+                                                                {log.work_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                                            </span>
+                                                            <span className="ml-2 text-gray-400">
+                                                                {formatDate(log.work_date, auth.settings)}
+                                                            </span>
+                                                            <span className="ml-2 text-gray-400">
+                                                                by {log.provider.name}
+                                                            </span>
+                                                        </div>
+                                                        <Link
+                                                            href={route('seo-logs.show', log.id)}
+                                                            className="text-blue-500 hover:text-blue-400 text-sm"
+                                                        >
+                                                            View Details
+                                                        </Link>
+                                                    </div>
+                                                    <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: log.description }} />
+                                                    {log.attachment_path && (
+                                                        <div className="mt-2">
+                                                            <a
+                                                                href={`/storage/${log.attachment_path}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-500 hover:text-blue-400 text-sm flex items-center"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                                </svg>
+                                                                View Attachment
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-4">
+                                            <p className="text-gray-400">No SEO logs found for this project.</p>
+                                            <Link
+                                                href={route('seo-logs.create', { project_id: project.id })}
+                                                className="inline-block mt-2 text-blue-500 hover:text-blue-400"
+                                            >
+                                                Add First Log
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

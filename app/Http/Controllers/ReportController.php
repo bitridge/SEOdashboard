@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\PdfService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -24,58 +25,146 @@ class ReportController extends Controller
 
     public function create(Project $project)
     {
-        $seoLogs = SeoLog::where('project_id', $project->id)->latest()->get();
-        return Inertia::render('Reports/Create', [
-            'project' => $project,
-            'seoLogs' => $seoLogs
-        ]);
+        try {
+            \Log::info('Creating report for project:', ['project_id' => $project->id]);
+            
+            // Get the query builder instance
+            $query = SeoLog::where('project_id', $project->id)
+                ->with('provider')
+                ->latest();
+            
+            // Log the SQL query
+            \Log::info('SQL Query:', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
+            
+            // Execute the query
+            $seoLogs = $query->get();
+            
+            \Log::info('Found SEO logs:', [
+                'count' => $seoLogs->count(),
+                'logs' => $seoLogs->toArray()
+            ]);
+            
+            return Inertia::render('Reports/Create', [
+                'project' => $project,
+                'seoLogs' => $seoLogs
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in ReportController@create:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'sections' => 'required|array',
-            'sections.*.title' => 'required|string|max:255',
-            'sections.*.content' => 'required|string',
-            'seo_logs' => 'array'
-        ]);
-
-        $report = Report::create([
+        \Log::info('Attempting to save report with data:', [
             'project_id' => $request->project_id,
             'title' => $request->title,
-            'content' => $request->description,
-            'type' => 'custom',
-            'status' => 'draft'
+            'description_length' => strlen($request->description),
+            'sections' => json_decode($request->sections, true),
+            'seo_logs' => json_decode($request->seo_logs, true)
         ]);
 
-        // Handle sections with images
-        $sections = json_decode($request->sections, true);
-        foreach ($sections as $index => $section) {
-            $imagePath = null;
-            if ($request->hasFile("section_images.{$section['id']}")) {
-                $file = $request->file("section_images.{$section['id']}");
-                $imagePath = $file->store('report-images', 'public');
+        try {
+            // First validate the basic fields
+            $validated = $request->validate([
+                'project_id' => 'required|exists:projects,id',
+                'title' => 'required|string|max:255',
+                'description' => 'required|string',
+                'sections' => 'required|json',
+                'seo_logs' => 'nullable|json',
+                'generate_pdf' => 'nullable|in:0,1'
+            ]);
+
+            // Decode and validate sections
+            $sections = json_decode($validated['sections'], true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                \Log::error('JSON decode error for sections:', ['error' => json_last_error_msg()]);
+                return back()->withErrors(['sections' => 'Invalid section data format']);
             }
 
-            $report->sections()->create([
-                'title' => $section['title'],
-                'content' => $section['content'],
-                'priority' => $index + 1,
-                'image_path' => $imagePath
+            if (empty($sections)) {
+                \Log::warning('No sections provided in the report');
+                return back()->withErrors(['sections' => 'At least one section is required']);
+            }
+
+            // Validate each section
+            foreach ($sections as $index => $section) {
+                if (empty($section['title'])) {
+                    \Log::warning("Section {$index} missing title");
+                    return back()->withErrors(['sections' => "Section " . ($index + 1) . " title is required"]);
+                }
+                if (empty($section['content'])) {
+                    \Log::warning("Section {$index} missing content");
+                    return back()->withErrors(['sections' => "Section " . ($index + 1) . " content is required"]);
+                }
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // Create the report
+                $report = Report::create([
+                    'project_id' => $validated['project_id'],
+                    'title' => $validated['title'],
+                    'description' => $validated['description']
+                ]);
+
+                \Log::info('Created report:', ['report_id' => $report->id]);
+
+                // Process sections
+                foreach ($sections as $index => $sectionData) {
+                    $section = $report->sections()->create([
+                        'title' => $sectionData['title'],
+                        'content' => $sectionData['content'],
+                        'priority' => $sectionData['priority'] ?? ($index + 1)
+                    ]);
+
+                    // Handle section image if present
+                    $imageKey = "section_images.{$section->id}";
+                    if ($request->hasFile($imageKey)) {
+                        $image = $request->file($imageKey);
+                        $path = $image->store('section-images', 'public');
+                        $section->update(['image_path' => $path]);
+                        \Log::info("Saved image for section {$section->id}");
+                    }
+                }
+
+                // Handle SEO logs if present
+                if (!empty($validated['seo_logs'])) {
+                    $seoLogs = json_decode($validated['seo_logs'], true);
+                    if (is_array($seoLogs) && !empty($seoLogs)) {
+                        $report->seoLogs()->attach($seoLogs);
+                        \Log::info('Attached SEO logs to report:', ['log_count' => count($seoLogs)]);
+                    }
+                }
+
+                DB::commit();
+                \Log::info('Successfully saved report with all sections and attachments');
+
+                if ($request->input('generate_pdf') === '1') {
+                    return $this->generatePdf($request, $report);
+                }
+
+                return redirect()->route('reports.show', $report->id)
+                               ->with('success', 'Report created successfully');
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error saving report:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
+            
+            return back()->withErrors(['general' => 'An error occurred while saving the report. Please try again.']);
         }
-
-        // Attach SEO logs if any
-        if ($request->seo_logs) {
-            $seoLogIds = json_decode($request->seo_logs, true);
-            $report->seoLogs()->attach($seoLogIds);
-        }
-
-        return redirect()->route('reports.show', $report)
-            ->with('success', 'Report created successfully.');
     }
 
     public function show(Report $report)

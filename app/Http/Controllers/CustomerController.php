@@ -92,4 +92,13 @@ class CustomerController extends Controller
         return redirect()->route('customers.index')
             ->with('success', 'Customer deleted successfully.');
     }
+
+    public function show(User $customer)
+    {
+        return Inertia::render('Customers/Show', [
+            'customer' => $customer->load(['projects' => function($query) {
+                $query->latest();
+            }])
+        ]);
+    }
 }

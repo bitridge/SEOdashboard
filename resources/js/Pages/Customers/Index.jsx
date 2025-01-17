@@ -71,6 +71,12 @@ export default function Index({ auth, customers }) {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
                                     <Link
+                                        href={route('customers.show', customer.id)}
+                                        className="text-green-400 hover:text-green-300 font-medium"
+                                    >
+                                        View
+                                    </Link>
+                                    <Link
                                         href={route('customers.edit', customer.id)}
                                         className="text-blue-400 hover:text-blue-300 font-medium"
                                     >

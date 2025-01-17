@@ -6,14 +6,15 @@ import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import QuillEditor from '@/Components/QuillEditor';
 
-export default function Create({ auth }) {
+export default function Create({ auth, customers, selectedCustomer = null }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         description: '',
-        customer_id: '',
-        provider_id: '',
+        customer_id: selectedCustomer ? selectedCustomer.id : '',
+        provider_ids: [],
         start_date: '',
         end_date: '',
+        status: 'active'
     });
 
     const handleSubmit = (e) => {
@@ -28,7 +29,7 @@ export default function Create({ auth }) {
         >
             <Head title="Create Project" />
 
-            <div className="py-12">
+            <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-gray-900 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
@@ -59,30 +60,22 @@ export default function Create({ auth }) {
 
                                 <div>
                                     <InputLabel htmlFor="customer_id" value="Customer" className="text-white" />
-                                    <TextInput
+                                    <select
                                         id="customer_id"
-                                        type="text"
                                         name="customer_id"
                                         value={data.customer_id}
-                                        className="mt-1 block w-full bg-gray-800 text-white"
+                                        className="mt-1 block w-full bg-gray-800 text-white border-gray-700 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
                                         onChange={(e) => setData('customer_id', e.target.value)}
                                         required
-                                    />
+                                    >
+                                        <option value="">Select a customer</option>
+                                        {customers.map((customer) => (
+                                            <option key={customer.id} value={customer.id}>
+                                                {customer.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                     <InputError message={errors.customer_id} className="mt-2" />
-                                </div>
-
-                                <div>
-                                    <InputLabel htmlFor="provider_id" value="Provider" className="text-white" />
-                                    <TextInput
-                                        id="provider_id"
-                                        type="text"
-                                        name="provider_id"
-                                        value={data.provider_id}
-                                        className="mt-1 block w-full bg-gray-800 text-white"
-                                        onChange={(e) => setData('provider_id', e.target.value)}
-                                        required
-                                    />
-                                    <InputError message={errors.provider_id} className="mt-2" />
                                 </div>
 
                                 <div>
@@ -113,10 +106,26 @@ export default function Create({ auth }) {
                                     <InputError message={errors.end_date} className="mt-2" />
                                 </div>
 
+                                <div>
+                                    <InputLabel htmlFor="status" value="Status" className="text-white" />
+                                    <select
+                                        id="status"
+                                        name="status"
+                                        value={data.status}
+                                        className="mt-1 block w-full bg-gray-800 text-white border-gray-700 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+                                        onChange={(e) => setData('status', e.target.value)}
+                                        required
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                    <InputError message={errors.status} className="mt-2" />
+                                </div>
+
                                 <div className="flex items-center justify-end mt-4">
                                     <Link
                                         href={route('projects.index')}
-                                        className="underline text-sm text-gray-400 hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        className="text-gray-400 hover:text-white transition-colors"
                                     >
                                         Cancel
                                     </Link>

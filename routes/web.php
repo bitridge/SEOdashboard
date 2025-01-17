@@ -67,7 +67,8 @@ Route::middleware(['web'])->group(function () {
     // Routes accessible by both Admin and Provider
     Route::middleware(['auth', CheckRole::class.':admin,provider'])->group(function () {
         Route::resource('seo-logs', SeoLogController::class);
-        Route::resource('reports', ReportController::class);
+        Route::resource('reports', ReportController::class)->except(['create']);
+        Route::get('projects/{project}/reports/create', [ReportController::class, 'create'])->name('reports.create');
         Route::get('reports/{report}/download', [ReportController::class, 'download'])->name('reports.download');
         Route::post('reports/{project}/generate-pdf', [ReportController::class, 'generatePdf'])->name('reports.generate-pdf');
     });

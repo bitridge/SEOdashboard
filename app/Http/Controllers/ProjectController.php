@@ -14,24 +14,24 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        $projects = Project::with(['customer', 'providers'])->get();
-        
         return Inertia::render('Projects/Index', [
-            'projects' => $projects
+            'projects' => Project::with(['customer', 'providers'])->latest()->get()
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $customers = User::where('role', 'customer')->get();
-        $providers = User::where('role', 'provider')->get();
-        
+        $selectedCustomer = null;
+        if ($request->has('customer_id')) {
+            $selectedCustomer = User::where('role', 'customer')->findOrFail($request->customer_id);
+        }
+
         return Inertia::render('Projects/Create', [
-            'customers' => $customers,
-            'providers' => $providers
+            'customers' => User::where('role', 'customer')->get(),
+            'selectedCustomer' => $selectedCustomer,
         ]);
     }
 
@@ -42,39 +42,28 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'customer_id' => 'required|exists:users,id',
             'description' => 'required|string',
+            'customer_id' => 'required|exists:users,id',
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'provider_ids' => 'required|array',
-            'provider_ids.*' => 'exists:users,id',
-            'status' => 'required|in:active,inactive'
+            'end_date' => 'required|date|after:start_date',
+            'status' => 'required|in:active,inactive',
         ]);
 
-        $project = Project::create([
-            'name' => $validated['name'],
-            'customer_id' => $validated['customer_id'],
-            'description' => $validated['description'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-            'status' => $validated['status']
-        ]);
+        $project = Project::create($validated);
 
-        $project->providers()->attach($validated['provider_ids']);
-
-        return redirect()->route('projects.index')
+        return redirect()->route('projects.show', $project->id)
             ->with('success', 'Project created successfully.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Project $project)
     {
-        $project = Project::with(['customer', 'providers'])->findOrFail($id);
-        
         return Inertia::render('Projects/Show', [
-            'project' => $project
+            'project' => $project->load(['customer', 'providers', 'seoLogs' => function($query) {
+                $query->latest('work_date')->take(5)->with('provider');
+            }])
         ]);
     }
 
@@ -83,13 +72,9 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
-        $customers = User::where('role', 'customer')->get();
-        $providers = User::where('role', 'provider')->get();
-        
         return Inertia::render('Projects/Edit', [
-            'project' => $project->load('providers'),
-            'customers' => $customers,
-            'providers' => $providers
+            'project' => $project->load(['customer', 'providers']),
+            'customers' => User::where('role', 'customer')->get(),
         ]);
     }
 
@@ -100,27 +85,16 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'customer_id' => 'required|exists:users,id',
             'description' => 'required|string',
+            'customer_id' => 'required|exists:users,id',
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'provider_ids' => 'required|array',
-            'provider_ids.*' => 'exists:users,id',
-            'status' => 'required|in:active,inactive'
+            'end_date' => 'required|date|after:start_date',
+            'status' => 'required|in:active,inactive',
         ]);
 
-        $project->update([
-            'name' => $validated['name'],
-            'customer_id' => $validated['customer_id'],
-            'description' => $validated['description'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-            'status' => $validated['status']
-        ]);
+        $project->update($validated);
 
-        $project->providers()->sync($validated['provider_ids']);
-
-        return redirect()->route('projects.index')
+        return redirect()->route('projects.show', $project->id)
             ->with('success', 'Project updated successfully.');
     }
 
@@ -129,7 +103,6 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        $project->providers()->detach();
         $project->delete();
 
         return redirect()->route('projects.index')
